@@ -1,0 +1,53 @@
+# IDE files
+.idea/
+*.iml
+*.iws
+
+# Build output
+/build
+/out
+/app/build
+
+# Gradle files
+.gradle/
+build/
+gradle/
+gradlew
+gradlew.bat
+
+# Local properties
+local.properties
+
+# Keystore files
+*.jks
+*.keystore
+
+# Log files
+*.log
+
+# Mac files
+.DS_Store
+
+# Captures
+/captures/
+
+# Generated files
+/release/
+/app/release/
+/app/debug/
+/app/profile/
+*.apk
+*.aab
+*.ap_
+*.apks
+*.aab
+*.jar
+*.war
+*.ear
+/backend/build/
+/backend/.gradle/
+/backend/bin/
+/backend/out/
+/backend/build/libs/*.jar
+!/backend/build/libs/*-SNAPSHOT.jar
+!/backend/build/libs/backend-*.jar

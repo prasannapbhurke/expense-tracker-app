@@ -1,0 +1,65 @@
+package com.example.expensetracker.remote;
+
+import android.content.Context;
+
+import com.example.expensetracker.SessionManager;
+
+import java.io.IOException;
+
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class RetrofitClient {
+    private static Retrofit retrofit = null;
+
+    public static Retrofit getClient(Context context) {
+        if (retrofit == null) {
+            SessionManager sessionManager = new SessionManager(context);
+
+            OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+            httpClient.addInterceptor(new Interceptor() {
+                @Override
+                public Response intercept(Chain chain) throws IOException {
+                    Request original = chain.request();
+                    Request.Builder requestBuilder = original.newBuilder();
+                    String sessionId = sessionManager.getSessionId();
+                    if (sessionId != null) {
+                        requestBuilder.addHeader("Cookie", sessionId);
+                    }
+                    Request request = requestBuilder.build();
+                    return chain.proceed(request);
+                }
+            });
+            httpClient.addInterceptor(new ReceivedCookiesInterceptor(sessionManager));
+
+            retrofit = new Retrofit.Builder()
+                    .baseUrl("http://10.0.2.2:8080/")
+                    .client(httpClient.build())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+        }
+        return retrofit;
+    }
+}
+
+class ReceivedCookiesInterceptor implements Interceptor {
+    private SessionManager sessionManager;
+
+    public ReceivedCookiesInterceptor(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+    }
+
+    @Override
+    public Response intercept(Interceptor.Chain chain) throws IOException {
+        Response originalResponse = chain.proceed(chain.request());
+        if (!originalResponse.headers("Set-Cookie").isEmpty()) {
+            String sessionId = originalResponse.header("Set-Cookie");
+            sessionManager.saveSessionId(sessionId);
+        }
+        return originalResponse;
+    }
+}
