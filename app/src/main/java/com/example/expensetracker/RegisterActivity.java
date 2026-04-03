@@ -7,7 +7,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.expensetracker.backend.User;
 import com.example.expensetracker.remote.ApiService;
 import com.example.expensetracker.remote.RetrofitClient;
 

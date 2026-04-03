@@ -1,7 +1,7 @@
 package com.example.expensetracker.remote;
 
 import com.example.expensetracker.Expense;
-import com.example.expensetracker.backend.User;
+import com.example.expensetracker.User;
 
 import java.util.List;
 
