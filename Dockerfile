@@ -1,5 +1,5 @@
-# Use a standard OpenJDK 8 runtime as a parent image
-FROM openjdk:8
+# Use an Eclipse Temurin OpenJDK 8 image as a parent image
+FROM eclipse-temurin:8-jdk-focal
 
 # Set the working directory in the container
 WORKDIR /app
