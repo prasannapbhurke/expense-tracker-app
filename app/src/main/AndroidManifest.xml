@@ -18,7 +18,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity$MainActivity"
             android:exported="false" />
         <activity
             android:name=".RegisterActivity"

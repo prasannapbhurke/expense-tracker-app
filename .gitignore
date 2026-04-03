@@ -39,13 +39,13 @@ local.properties
 *.aab
 *.ap_
 *.apks
-*.jar
+# *.jar  <-- Removed this broad ignore
 *.war
 *.ear
 /backend/build/
 /backend/.gradle/
 /backend/bin/
 /backend/out/
-/backend/build/libs/*.jar
-!/backend/build/libs/*-SNAPSHOT.jar
-!/backend/build/libs/backend-*.jar
+
+# Explicitly include the wrapper jar
+!gradle/wrapper/gradle-wrapper.jar
