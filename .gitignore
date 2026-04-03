@@ -11,9 +11,8 @@
 # Gradle files
 .gradle/
 build/
-gradle/
-gradlew
-gradlew.bat
+# gradlew and gradlew.bat should NOT be ignored
+# gradle/ should NOT be ignored
 
 # Local properties
 local.properties
@@ -35,12 +34,11 @@ local.properties
 /release/
 /app/release/
 /app/debug/
-/app/profile/
+/app.profile/
 *.apk
 *.aab
 *.ap_
 *.apks
-*.aab
 *.jar
 *.war
 *.ear
