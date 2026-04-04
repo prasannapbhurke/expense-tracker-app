@@ -1,7 +1,6 @@
 package com.example.expensetracker.backend;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import javax.persistence.*;
 
 @Entity

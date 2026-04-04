@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BackendApplication {
 
     public static void main(String[] args) {
+        System.out.println("Starting Backend Application...");
         SpringApplication.run(BackendApplication.class, args);
+        System.out.println("Backend Application Started successfully on port 8080");
     }
 
 }

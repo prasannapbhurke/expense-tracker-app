@@ -19,14 +19,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
+                .headers().frameOptions().disable() // Required for H2 Console
+                .and()
                 .authorizeRequests()
-                .antMatchers("/api/users/register", "/login", "/app.js", "/").permitAll()
+                .antMatchers("/api/users/register", "/login", "/h2-console/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
-                .loginPage("/login.html")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/index.html", true)
                 .permitAll()
                 .and()
                 .logout()

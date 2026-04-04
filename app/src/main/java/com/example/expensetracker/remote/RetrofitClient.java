@@ -16,9 +16,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
     private static Retrofit retrofit = null;
 
-    public static Retrofit getClient(Context context) {
+    public static synchronized Retrofit getClient(Context context) {
         if (retrofit == null) {
-            SessionManager sessionManager = new SessionManager(context);
+            SessionManager sessionManager = new SessionManager(context.getApplicationContext());
 
             OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
             httpClient.addInterceptor(new Interceptor() {
@@ -56,7 +56,7 @@ class ReceivedCookiesInterceptor implements Interceptor {
     @Override
     public Response intercept(Interceptor.Chain chain) throws IOException {
         Response originalResponse = chain.proceed(chain.request());
-        if (!originalResponse.headers("Set-Cookie").isEmpty()) {
+        if (originalResponse.headers("Set-Cookie") != null && !originalResponse.headers("Set-Cookie").isEmpty()) {
             String sessionId = originalResponse.header("Set-Cookie");
             sessionManager.saveSessionId(sessionId);
         }
