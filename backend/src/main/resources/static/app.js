@@ -1,48 +1,97 @@
 $(document).ready(function() {
-    const expenseList = $('#expense-list');
-    const addExpenseForm = $('#add-expense-form');
-    const saveExpenseButton = $('#save-expense');
-    const sortBy = $('#sort-by');
-    let editExpenseId = null;
+    let expenses = [];
+    const categoryColors = {
+        'Food': '#ff6384',
+        'Transport': '#36a2eb',
+        'Shopping': '#cc65fe',
+        'Bills': '#ffce56',
+        'Other': '#4bc0c0'
+    };
 
-    function loadExpenses() {
-        const sortValue = sortBy.val().split(',');
-        const sortParam = `?sortBy=${sortValue[0]}&sortDir=${sortValue[1]}`;
-
+    function fetchExpenses() {
+        const sortBy = $('#sort-by').val().split(',');
+        const range = $('#time-range').val();
         $.ajax({
-            url: `/api/expenses${sortParam}`,
+            url: `/api/expenses?sortBy=${sortBy[0]}&sortDir=${sortBy[1]}&range=${range}`,
             method: 'GET',
             success: function(data) {
-                expenseList.empty();
-                data.forEach(function(expense) {
-                    expenseList.append(`
-                        <tr>
-                            <td>${expense.name}</td>
-                            <td>${expense.amount}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary edit-expense" data-id="${expense.id}">Edit</button>
-                                <button class="btn btn-sm btn-danger delete-expense" data-id="${expense.id}">Delete</button>
-                            </td>
-                        </tr>
-                    `);
-                });
+                expenses = data;
+                renderExpenses();
+                updateSummary();
+            },
+            error: function() {
+                window.location.href = '/login.html';
             }
         });
     }
 
-    sortBy.on('change', loadExpenses);
+    function renderExpenses() {
+        const list = $('#expense-list');
+        list.empty();
+        const searchTerm = $('#search-input').val().toLowerCase();
 
-    saveExpenseButton.on('click', function() {
-        const name = $('#expense-name').val();
-        const amount = $('#expense-amount').val();
-        const expense = { name: name, amount: amount };
+        expenses.filter(e => e.name.toLowerCase().includes(searchTerm)).forEach(expense => {
+            const date = new Date(expense.timestamp).toLocaleDateString();
+            list.append(`
+                <tr>
+                    <td>
+                        <strong>${expense.name}</strong><br>
+                        <small class="text-muted">${date} | ${expense.category || 'Uncategorized'}</small>
+                    </td>
+                    <td class="text-danger font-weight-bold">-Rs ${expense.amount.toFixed(2)}</td>
+                    <td class="text-right">
+                        <button class="btn btn-sm btn-outline-info edit-btn" data-id="${expense.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${expense.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
 
-        let url = '/api/expenses';
-        let method = 'POST';
-        if (editExpenseId) {
-            url += `/${editExpenseId}`;
-            method = 'PUT';
+    function updateSummary() {
+        const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        $('#total-spent').text(`Rs ${total.toFixed(2)}`);
+
+        // Category breakdown
+        const categories = {};
+        expenses.forEach(exp => {
+            const cat = exp.category || 'Other';
+            categories[cat] = (categories[cat] || 0) + exp.amount;
+        });
+
+        const summaryBody = $('#category-summary');
+        summaryBody.empty();
+        for (const cat in categories) {
+            const percent = total > 0 ? (categories[cat] / total * 100).toFixed(1) : 0;
+            summaryBody.append(`
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="font-weight-bold text-muted">${cat}</span>
+                        <span class="text-dark">Rs ${categories[cat].toFixed(2)} (${percent}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar" style="width: ${percent}%; background-color: ${categoryColors[cat] || '#ddd'}"></div>
+                    </div>
+                </div>
+            `);
         }
+    }
+
+    $('#save-expense').on('click', function() {
+        const id = $('#expense-id').val();
+        const expense = {
+            name: $('#expense-name').val(),
+            amount: parseFloat($('#expense-amount').val()),
+            category: $('#expense-category').val()
+        };
+
+        if(!expense.name || isNaN(expense.amount)) {
+            alert("Please enter valid details");
+            return;
+        }
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/expenses/${id}` : '/api/expenses';
 
         $.ajax({
             url: url,
@@ -50,43 +99,46 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(expense),
             success: function() {
-                loadExpenses();
-                addExpenseForm[0].reset();
                 $('#addExpenseModal').modal('hide');
-                editExpenseId = null;
+                resetForm();
+                fetchExpenses();
             }
         });
     });
 
-    expenseList.on('click', '.edit-expense', function() {
+    $(document).on('click', '.delete-btn', function() {
+        if (confirm('Are you sure you want to delete this expense?')) {
+            const id = $(this).data('id');
+            $.ajax({
+                url: `/api/expenses/${id}`,
+                method: 'DELETE',
+                success: fetchExpenses
+            });
+        }
+    });
+
+    $(document).on('click', '.edit-btn', function() {
         const id = $(this).data('id');
-        editExpenseId = id;
-        $.ajax({
-            url: `/api/expenses/${id}`,
-            method: 'GET',
-            success: function(expense) {
-                $('#expense-name').val(expense.name);
-                $('#expense-amount').val(expense.amount);
-                $('#addExpenseModal').modal('show');
-            }
-        });
+        const expense = expenses.find(e => e.id == id);
+        $('#expense-id').val(expense.id);
+        $('#expense-name').val(expense.name);
+        $('#expense-amount').val(expense.amount);
+        $('#expense-category').val(expense.category);
+        $('#addExpenseModalLabel').text('Edit Expense');
+        $('#addExpenseModal').modal('show');
     });
 
-    expenseList.on('click', '.delete-expense', function() {
-        const id = $(this).data('id');
-        $.ajax({
-            url: `/api/expenses/${id}`,
-            method: 'DELETE',
-            success: function() {
-                loadExpenses();
-            }
-        });
-    });
+    function resetForm() {
+        $('#expense-id').val('');
+        $('#expense-name').val('');
+        $('#expense-amount').val('');
+        $('#expense-category').val('Other');
+        $('#addExpenseModalLabel').text('Add Expense');
+    }
 
-    $('#addExpenseModal').on('hidden.bs.modal', function () {
-        addExpenseForm[0].reset();
-        editExpenseId = null;
-    });
+    $('#sort-by').on('change', fetchExpenses);
+    $('#time-range').on('change', fetchExpenses);
+    $('#search-input').on('input', renderExpenses);
 
-    loadExpenses();
+    fetchExpenses();
 });

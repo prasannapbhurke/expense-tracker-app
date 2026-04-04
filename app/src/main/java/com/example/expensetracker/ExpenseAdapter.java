@@ -3,7 +3,6 @@ package com.example.expensetracker;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -41,7 +40,9 @@ public class ExpenseAdapter extends RecyclerView.Adapter<ExpenseAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Expense expense = expenses.get(position);
         holder.expenseName.setText(expense.getName());
-        holder.expenseAmount.setText(String.format("-$%.2f", expense.getAmount()));
+        holder.expenseCategory.setText(expense.getCategory() != null ? expense.getCategory() : "Other");
+        holder.expenseAmount.setText(String.format("-₹ %.2f", expense.getAmount()));
+        
         holder.itemView.setOnLongClickListener(v -> {
             setLongClickedPosition(holder.getAdapterPosition());
             return false;
@@ -56,11 +57,13 @@ public class ExpenseAdapter extends RecyclerView.Adapter<ExpenseAdapter.ViewHold
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
         public TextView expenseName;
         public TextView expenseAmount;
+        public TextView expenseCategory;
 
         public ViewHolder(View itemView) {
             super(itemView);
             expenseName = itemView.findViewById(R.id.expense_name);
             expenseAmount = itemView.findViewById(R.id.expense_amount);
+            expenseCategory = itemView.findViewById(R.id.expense_category);
             itemView.setOnCreateContextMenuListener(this);
         }
 

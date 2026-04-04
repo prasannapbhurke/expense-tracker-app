@@ -9,10 +9,14 @@ public class Expense {
     private Long id;
     private String name;
     private double amount;
+    private String category;
+    private String timestamp;
 
-    public Expense(String name, double amount) {
+    public Expense(String name, double amount, String category) {
         this.name = name;
         this.amount = amount;
+        this.category = category;
+        this.timestamp = String.valueOf(System.currentTimeMillis());
     }
 
     public Long getId() {
@@ -37,5 +41,21 @@ public class Expense {
 
     public void setAmount(double amount) {
         this.amount = amount;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
     }
 }

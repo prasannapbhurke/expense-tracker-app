@@ -2,6 +2,7 @@ package com.example.expensetracker.backend;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class Expense {
@@ -10,6 +11,8 @@ public class Expense {
     private Long id;
     private String name;
     private double amount;
+    private String category;
+    private LocalDateTime timestamp;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -17,11 +20,14 @@ public class Expense {
     private User user;
 
     public Expense() {
+        this.timestamp = LocalDateTime.now();
     }
 
-    public Expense(String name, double amount) {
+    public Expense(String name, double amount, String category) {
         this.name = name;
         this.amount = amount;
+        this.category = category;
+        this.timestamp = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -46,6 +52,22 @@ public class Expense {
 
     public void setAmount(double amount) {
         this.amount = amount;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
     public User getUser() {

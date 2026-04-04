@@ -1,10 +1,13 @@
 package com.example.expensetracker;
 
+import android.app.DatePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -16,9 +19,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private ExpenseAdapter adapter;
     private ExpenseViewModel expenseViewModel;
     private List<Expense> expenses = new ArrayList<>();
+    private final String[] CATEGORIES = {"Food", "Transport", "Shopping", "Bills", "Other"};
+    private final Calendar calendar = Calendar.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,12 +104,41 @@ public class MainActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_expense, null);
         builder.setView(view);
 
-        final EditText expenseNameInput = view.findViewById(R.id.expense_name_input);
-        final EditText expenseAmountInput = view.findViewById(R.id.expense_amount_input);
+        final TextInputEditText expenseNameInput = view.findViewById(R.id.expense_name_input);
+        final TextInputEditText expenseAmountInput = view.findViewById(R.id.expense_amount_input);
+        final AutoCompleteTextView categoryInput = view.findViewById(R.id.expense_category_input);
+        final TextInputEditText dateInput = view.findViewById(R.id.expense_date_input);
+
+        // Set up category dropdown
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, CATEGORIES);
+        categoryInput.setAdapter(categoryAdapter);
+
+        // Date Picker logic
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        if (expense != null && expense.getTimestamp() != null) {
+            try {
+                // Assuming timestamp is stored as a string or long. Let's use current time as fallback
+                dateInput.setText(sdf.format(Long.parseLong(expense.getTimestamp())));
+            } catch (Exception e) {
+                dateInput.setText(sdf.format(calendar.getTime()));
+            }
+        } else {
+            dateInput.setText(sdf.format(calendar.getTime()));
+        }
+
+        dateInput.setOnClickListener(v -> {
+            new DatePickerDialog(MainActivity.this, (view1, year, month, dayOfMonth) -> {
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month);
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                dateInput.setText(sdf.format(calendar.getTime()));
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
+        });
 
         if (expense != null) {
             expenseNameInput.setText(expense.getName());
             expenseAmountInput.setText(String.valueOf(expense.getAmount()));
+            categoryInput.setText(expense.getCategory(), false);
         }
 
         builder.setPositiveButton(expense == null ? "Add" : "Save", new DialogInterface.OnClickListener() {
@@ -108,15 +146,21 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 String name = expenseNameInput.getText().toString();
                 String amountStr = expenseAmountInput.getText().toString();
+                String category = categoryInput.getText().toString();
+                String timestamp = String.valueOf(calendar.getTimeInMillis());
 
                 if (!name.isEmpty() && !amountStr.isEmpty()) {
                     try {
                         double amount = Double.parseDouble(amountStr);
                         if (expense == null) { // Add new
-                            expenseViewModel.insert(new Expense(name, amount));
+                            Expense newExpense = new Expense(name, amount, category);
+                            newExpense.setTimestamp(timestamp);
+                            expenseViewModel.insert(newExpense);
                         } else { // Edit existing
                             expense.setName(name);
                             expense.setAmount(amount);
+                            expense.setCategory(category);
+                            expense.setTimestamp(timestamp);
                             expenseViewModel.update(expense);
                         }
                     } catch (NumberFormatException e) {
