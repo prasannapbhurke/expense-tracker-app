@@ -1,7 +1,9 @@
 package com.example.expensetracker;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -24,6 +26,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginButton;
     private TextView registerLink;
     private ApiService apiService;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +40,18 @@ public class LoginActivity extends AppCompatActivity {
 
         apiService = RetrofitClient.getClient(this).create(ApiService.class);
 
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Logging in...");
+        progressDialog.setCancelable(false);
+
         loginButton.setOnClickListener(v -> {
-            String username = usernameInput.getText().toString();
-            String password = passwordInput.getText().toString();
-            login(username, password);
+            String username = usernameInput.getText().toString().trim();
+            String password = passwordInput.getText().toString().trim();
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please enter credentials", Toast.LENGTH_SHORT).show();
+            } else {
+                login(username, password);
+            }
         });
 
         registerLink.setOnClickListener(v -> {
@@ -49,20 +60,26 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void login(String username, String password) {
+        progressDialog.show();
         apiService.login(username, password).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                progressDialog.dismiss();
                 if (response.isSuccessful()) {
+                    Log.d("Login", "Success! Moving to MainActivity");
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
                 } else {
-                    Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
+                    Log.e("Login", "Failed with code: " + response.code());
+                    Toast.makeText(LoginActivity.this, "Invalid username or password (Error " + response.code() + ")", Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Login failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+                Log.e("Login", "Network Error: " + t.getMessage());
+                Toast.makeText(LoginActivity.this, "Connection Error: Is the backend running? " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
