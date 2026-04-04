@@ -22,13 +22,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .headers().frameOptions().disable() // Required for H2 Console
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/users/register", "/login", "/h2-console/**").permitAll()
+                .antMatchers("/api/users/register", "/register.html", "/login.html", "/h2-console/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
+                .loginPage("/login.html")
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/index.html", true)
                 .permitAll()
                 .and()
                 .logout()
+                .logoutSuccessUrl("/login.html")
                 .permitAll();
     }
 }
