@@ -1,8 +1,10 @@
 package com.example.expensetracker.remote;
 
 import android.content.Context;
+import android.util.Log;
 import com.example.expensetracker.SessionManager;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -12,17 +14,17 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
     private static Retrofit retrofit = null;
-
-    // Pointing to your NEW LIVE Render server
-    private static final String BASE_URL = "https://expense-tracker-app-wbxo.onrender.com/";
+    private static final String BASE_URL = "https://expense-tracker-app-wbxo.onrender.com/"; 
 
     public static synchronized Retrofit getClient(Context context) {
         if (retrofit == null) {
             SessionManager sessionManager = new SessionManager(context.getApplicationContext());
 
-            OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+            OkHttpClient.Builder httpClient = new OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS) // Increased for Render wake-up
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS);
             
-            // Handle Session ID (Cookies) for Login
             httpClient.addInterceptor(new Interceptor() {
                 @Override
                 public Response intercept(Chain chain) throws IOException {
@@ -30,6 +32,7 @@ public class RetrofitClient {
                     Request.Builder requestBuilder = original.newBuilder();
                     String sessionId = sessionManager.getSessionId();
                     if (sessionId != null) {
+                        Log.d("Network", "Sending Cookie: " + sessionId);
                         requestBuilder.addHeader("Cookie", sessionId);
                     }
                     return chain.proceed(requestBuilder.build());
@@ -58,10 +61,15 @@ class ReceivedCookiesInterceptor implements Interceptor {
     @Override
     public Response intercept(Interceptor.Chain chain) throws IOException {
         Response originalResponse = chain.proceed(chain.request());
-        if (originalResponse.headers("Set-Cookie") != null && !originalResponse.headers("Set-Cookie").isEmpty()) {
-            // Store the session cookie so we stay logged in
-            String sessionId = originalResponse.header("Set-Cookie");
-            sessionManager.saveSessionId(sessionId);
+        
+        // Specifically look for JSESSIONID cookie
+        if (!originalResponse.headers("Set-Cookie").isEmpty()) {
+            for (String header : originalResponse.headers("Set-Cookie")) {
+                if (header.contains("JSESSIONID")) {
+                    Log.d("Network", "Saving Session Cookie: " + header);
+                    sessionManager.saveSessionId(header);
+                }
+            }
         }
         return originalResponse;
     }
